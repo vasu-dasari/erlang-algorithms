@@ -1,4 +1,5 @@
 {application, 'erlang-algorithms',[
+    {registered,[]},
     {vsn,"git-master"},
     {description, 
         "Implementations of popular data structures and algorithms http://aggelgian.github.com/erlang-algorithms"},
