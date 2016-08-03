@@ -1,4 +1,4 @@
-{application, erlang-algorithms,[
+{application, 'erlang-algorithms',[
     {description, 
         "Implementations of popular data structures and algorithms http://aggelgian.github.com/erlang-algorithms"},
     {modules, [
