@@ -1,11 +1,11 @@
-{application, 'erlang-algorithms',[
+{application, 'algorithms',[
     {registered,[]},
     {vsn,"git-master"},
     {description, 
         "Implementations of popular data structures and algorithms http://aggelgian.github.com/erlang-algorithms"},
     {modules, [
         a_star, bfs, dfs,
-        dijkstra,edmonds_karp,
+        dijkstra,doc,edmonds_karp,
         graph, graph_lib,
         heap, kruskal,
         union_find
