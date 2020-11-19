@@ -1,30 +1,3 @@
-%%
-%% %CopyrightBegin%
-%%
-%% Copyright © 2013-2014 Aggelos Giantsios
-%%
-%% Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
-%% and associated documentation files (the “Software”), to deal in the Software without restriction, 
-%% including without limitation the rights to use, copy, modify, merge, publish, distribute, 
-%% sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is 
-%% furnished to do so, subject to the following conditions:
-%%
-%% The above copyright notice and this permission notice shall be included 
-%% in all copies or substantial portions of the Software.
-%%
-%% THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED 
-%% TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-%% IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-%% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
-%% CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-%%
-%% %CopyrightEnd%
-%%
-
-%% @copyright 2013-2014 Aggelos Giantsios
-%% @author Aggelos Giantsios
-
-%% ============================================================================
 %% @doc Directed / Undirected Graphs
 %%
 %% <p>This module implements directed and undirected graphs that are either 
@@ -85,7 +58,7 @@
 
 -export([from_file/1, from_file/3, del_graph/1, vertices/1, edges/1, edge_weight/2,
          edges_with_weights/1, out_neighbours/2, num_of_vertices/1, equal/2,
-         num_of_edges/1, pprint/1, empty/1, empty/2, add_vertex/2, add_edge/3,
+         num_of_edges/1, degree/2, pprint/1, empty/1, empty/2, add_vertex/2, add_edge/3,
          add_edge/4, graph_type/1, del_edge/2, weight_type/1, export/3, import/2]).
 
 -export_type([graph/0, vertex/0, edge/0, weight/0]).
@@ -300,6 +273,14 @@ edges_with_weights(G) ->
   
 out_neighbours(G, V) ->
   digraph:out_neighbours(G#graph.graph, V).
+
+%% @doc Return the degree of a vertex
+-spec degree(graph(),vertex())->non_neg_integer().
+
+degree(#graph{graph = G,type = undirected},V)->
+  digraph:out_degree(G,V); %could be in or out degree
+degree(#graph{graph = G,type = directed},V)->
+  digraph:out_degree(G,V)+digraph:in_degree(G,V).
 
 %% @doc Pretty print a graph
 -spec pprint(graph()) -> ok.

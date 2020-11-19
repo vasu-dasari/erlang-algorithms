@@ -1,30 +1,3 @@
-%%
-%% %CopyrightBegin%
-%%
-%% Copyright © 2013-2014 Aggelos Giantsios
-%%
-%% Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
-%% and associated documentation files (the “Software”), to deal in the Software without restriction, 
-%% including without limitation the rights to use, copy, modify, merge, publish, distribute, 
-%% sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is 
-%% furnished to do so, subject to the following conditions:
-%%
-%% The above copyright notice and this permission notice shall be included 
-%% in all copies or substantial portions of the Software.
-%%
-%% THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED 
-%% TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-%% IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-%% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
-%% CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-%%
-%% %CopyrightEnd%
-%%
-
-%% @copyright 2013-2014 Aggelos Giantsios
-%% @author Aggelos Giantsios
-
-%% ============================================================================
 %% @doc A* Algorithm
 %% 
 %% <p>A* calculates the least expensive path from a <code>Root</code> node to a <code>Target</code>
@@ -109,7 +82,9 @@
 
 run(Graph, Root, Target, H) ->
   State = astar_init(Graph, Root, Target, H),
-  astar_step(State).
+  R = astar_step(State),
+  astar_cleanup(State),
+  R.
 
 %% ==========================================================
 %% A* Functions
@@ -125,6 +100,10 @@ astar_init(G, Root, Target, H) ->
   Gscore = ?SET_GSCORE(Root, 0, ?EMPTY_GSCORE),
   Ps = ?ADD_PARENT(Root, root, ?EMPTY_PARENTS),
   #sts{graph=G, target=Target, h=H, open=Open, closed=Csd, fscore=Fscore, gscore=Gscore, parents=Ps}.
+
+%% Cleanup the state.
+astar_cleanup(State) ->
+  heap:delete(State#sts.fscore).
 
 %% A* loop
 -spec astar_step(astar_state()) -> astar_result().
