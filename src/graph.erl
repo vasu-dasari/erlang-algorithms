@@ -58,8 +58,8 @@
 
 -export([from_file/1, from_file/3, del_graph/1, vertices/1, edges/1, edge_weight/2,
          edges_with_weights/1, out_neighbours/2, num_of_vertices/1, equal/2,
-         num_of_edges/1, degree/2, pprint/1, empty/1, empty/2, add_vertex/2, add_edge/3,
-         add_edge/4, graph_type/1, del_edge/2, weight_type/1, export/3, import/2]).
+         num_of_edges/1, degree/2, pprint/1, graph2text/1, empty/1, empty/2, add_vertex/2, add_edge/3,
+         add_edge/4, graph_type/1, del_vertex/2, del_edge/2, weight_type/1, export/3, import/2]).
 
 -export_type([graph/0, vertex/0, edge/0, weight/0]).
 
@@ -190,6 +190,12 @@ weight_type(G) ->
 add_vertex(G, V) ->
   digraph:add_vertex(G#graph.graph, V).
 
+%% @doc Add a vertex to a graph
+-spec del_vertex(graph(), vertex()) -> vertex().
+
+del_vertex(G, V) ->
+  digraph:del_vertex(G#graph.graph, V).
+
 %% @doc Return a list of the vertices of a graph
 -spec vertices(graph()) -> [vertex()].
 
@@ -283,25 +289,37 @@ degree(#graph{graph = G,type = directed},V)->
   digraph:out_degree(G,V)+digraph:in_degree(G,V).
 
 %% @doc Pretty print a graph
--spec pprint(graph()) -> ok.
+-spec pprint(Graph) -> ok when
+  Graph :: graph() | digraph:graph().
 
 pprint(G) ->
-  Vs = digraph:vertices(G#graph.graph),
-  F = 
+  io:format("~s", [graph2text(G)]).
+
+%% @doc Graph to text form. Can be used in log messages
+-spec graph2text(Graph) -> list() when
+  Graph :: graph() | digraph:graph().
+
+graph2text(G) when is_record(G, graph) ->
+  graph2text(G#graph.graph);
+graph2text(D) ->
+  Vs = digraph:vertices(D),
+  F =
     fun(V) ->
-      Es = digraph:out_edges(G#graph.graph, V),
+      Es = digraph:out_edges(D, V),
       Ns = lists:map(
-        fun(E) -> 
-          {E, _V1, V2, W} = digraph:edge(G#graph.graph, E),
+        fun(E) ->
+          {E, _V1, V2, W} = digraph:edge(D, E),
           {V2, W}
-        end, 
+        end,
         Es),
       {V, Ns}
     end,
   N = lists:sort(fun erlang:'<'/2, lists:map(F, Vs)),
-  io:format("[{From, [{To, Weight}]}]~n"),
-  io:format("========================~n"),
-  io:format("~p~n", [N]).
+  lists:flatten(
+    io_lib:format("[{From, [{To, Weight}]}]~n", []) ++
+      io_lib:format("========================~n", []) ++
+      io_lib:format("~p~n", [N])
+  ).
 
 %% @doc Exports a graph to a file.
 %% <p>The user must provide the function that will generate the textual
