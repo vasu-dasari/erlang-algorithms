@@ -57,9 +57,9 @@
 -module(graph).
 
 -export([from_file/1, from_file/3, del_graph/1, vertices/1, edges/1, edge_weight/2,
-         edges_with_weights/1, out_neighbours/2, num_of_vertices/1, equal/2,
-         num_of_edges/1, degree/2, pprint/1, graph2text/1, empty/1, empty/2, add_vertex/2, add_edge/3,
-         add_edge/4, graph_type/1, del_vertex/2, del_edge/2, weight_type/1, export/3, import/2]).
+  edges_with_weights/1, out_neighbours/2, num_of_vertices/1, equal/2,
+  num_of_edges/1, degree/2, get_cycle/2, is_tree/1, pprint/1, graph2text/1, empty/1, empty/2, new/1, new/3, add_vertex/2, add_edge/3,
+  add_edge/4, graph_type/1, del_vertex/2, del_edge/2, weight_type/1, export/3, import/2]).
 
 -export_type([graph/0, vertex/0, edge/0, weight/0]).
 
@@ -92,6 +92,29 @@ empty(Type) when Type =:= directed; Type =:= undirected ->
 empty(T, WT) when (T =:= directed orelse T =:= undirected) andalso
                   (WT =:= unweighted orelse WT =:= d orelse WT =:= f) ->
   #graph{type=T, graph=digraph:new(), weightType=WT}.
+
+%% @doc Creates a new graph from existing graph
+-spec new(graph()) -> graph().
+
+new(G) when is_record(G, graph) ->
+  Graph = empty(G#graph.type, G#graph.weightType),
+  [ add_vertex(Graph, V) || V <- vertices(G) ],
+  [ add_edge(Graph, From, To, Wt) || {{From, To}, Wt} <- edges_with_weights(G) ],
+  Graph.
+
+%% @doc Create graph from vertices and edges
+-spec new(graphtype(), [vertex()], [edge()]) -> graph().
+
+new(Type, Vertices, Edges) ->
+  Graph = graph:empty(Type),
+  [graph:add_vertex(Graph, V) || V <- Vertices],
+  lists:foreach(fun
+    ({{V1, V2}, Wt}) ->
+      graph:add_edge(Graph, V1, V2, Wt);
+    ({V1, V2}) ->
+      graph:add_edge(Graph, V1, V2)
+  end, Edges),
+  Graph.
 
 %% @doc Create a new graph from a file using the default behaviour.
 -spec from_file(file:name()) -> graph().
@@ -287,6 +310,68 @@ degree(#graph{graph = G,type = undirected},V)->
   digraph:out_degree(G,V); %could be in or out degree
 degree(#graph{graph = G,type = directed},V)->
   digraph:out_degree(G,V)+digraph:in_degree(G,V).
+
+%% @doc Check if underlying graph is a tree
+%%
+%% This is a wrapper for digraph:is_tree()
+is_tree(#graph{graph = G,type = undirected}) ->
+  ((digraph:no_edges(G) div 2) =:= digraph:no_vertices(G) - 1)
+    andalso (length(digraph_utils:components(G)) =:= 1);
+is_tree(#graph{graph = G}) ->
+  digraph_utils:is_tree(G).
+
+%% @doc Returns a list of vertices that are part of cycle.
+%%
+%% In undirected graph, even if there are no cycles present,
+%% digraph:get_cycle would return a list of
+%% 3 vertices with first and last one being the same as requested
+%% vertex. This does not represent a cycle.
+-spec get_cycle(graph(), vertex()) -> [vertex()].
+get_cycle(#graph{graph = G,type = undirected},V)->
+  case one_path(digraph:out_neighbours(G, V), V, [], [V], [V], 3, G, 1) of
+    false ->
+      case lists:member(V, digraph:out_neighbours(G, V)) of
+        true -> [V];
+        false -> false
+      end;
+    [V,_,V] ->
+      false;
+    Vs ->
+      Vs
+  end;
+get_cycle(#graph{graph = G,type = directed},V)->
+  digraph:get_cycle(G,V).
+
+%% @doc Helper functions to support get_cycle
+%%
+%% Following code is copy-paste from digraph source code, except for the place
+%% where one_path is called with Prune parameter of 3 for undirected graphs. This
+%% code is internal to digraph module.
+
+%% prune_short_path (evaluate conditions on path)
+%% short : if path is too short
+%% ok    : if path is ok
+%%
+prune_short_path(Counter, Min) when Counter < Min ->
+  short;
+prune_short_path(_Counter, _Min) ->
+  ok.
+
+one_path([W|Ws], W, Cont, Xs, Ps, Prune, G, Counter) ->
+  case prune_short_path(Counter, Prune) of
+    short -> one_path(Ws, W, Cont, Xs, Ps, Prune, G, Counter);
+    ok -> lists:reverse([W|Ps])
+  end;
+one_path([V|Vs], W, Cont, Xs, Ps, Prune, G, Counter) ->
+  case lists:member(V, Xs) of
+    true ->  one_path(Vs, W, Cont, Xs, Ps, Prune, G, Counter);
+    false -> one_path(digraph:out_neighbours(G, V), W,
+      [{Vs,Ps} | Cont], [V|Xs], [V|Ps],
+      Prune, G, Counter+1)
+  end;
+one_path([], W, [{Vs,Ps}|Cont], Xs, _, Prune, G, Counter) ->
+  one_path(Vs, W, Cont, Xs, Ps, Prune, G, Counter-1);
+one_path([], _, [], _, _, _, _, _Counter) -> false.
 
 %% @doc Pretty print a graph
 -spec pprint(Graph) -> ok when
