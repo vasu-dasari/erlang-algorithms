@@ -252,8 +252,11 @@ add_edge(_G, _From, _To, _W) ->
 %% @doc Delete an edge from a graph
 -spec del_edge(graph(), edge()) -> 'true'.
 
-del_edge(G, E) ->
-  digraph:del_edge(G#graph.graph, E).
+del_edge(#graph{type=directed} = G, E) ->
+  digraph:del_edge(G#graph.graph, E);
+del_edge(#graph{type=undirected} = G, {From, To}) ->
+  digraph:del_edge(G#graph.graph, {From, To}),
+  digraph:del_edge(G#graph.graph, {To, From}).
 
 %% @doc Return a list of the edges of a graph
 -spec edges(graph()) -> [edge()].
